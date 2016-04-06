@@ -17,30 +17,28 @@
  * Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * 
  */
-
-package cs4800finalproject;
-import projectutilities.*;
+package projectutilities;
 
 /**
- * Project Interface - provide user with a netbeans and command line interface.
- * 
- * Project Overview: given the first section of a wikipedia article, we will be
- * attempting to first determine if that article references a person or not, and
- * then attempt to determine to sex (M/F) of the person the article references.
+ * Wikipedia - collection or wrapper class for wikipedia data utilities.
  * 
  * @author W. Hatfield
  * @author U. Jaimini
  * @author U. Panjala
  */
-public class ProjectInterface {
+public class Wikipedia {
     
     /**
-     * @param args the command line arguments
+     * 
      */
-    public static void main(String[] args) {
-        // TODO code application logic here
+    public class WikipediaPage {
         
-        //
     }
     
+    /**
+     * 
+     */
+    public class SpecialExportParser {
+        
+    }
 }
