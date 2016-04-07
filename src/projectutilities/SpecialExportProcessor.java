@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.File;
 
 /**
- * WikipediaSpecialExportProcessor - a collection of some file processing tools.
+ * SpecialExportProcessor - a collection of some file processing tools.
  * 
  * Developed to work with wikipedias special export files that can be retrieved
  * from the https://en.wikipedia.org/wiki/Special:Export web page. This suite
@@ -46,7 +46,7 @@ import java.io.File;
  * @author U. Jaimini
  * @author U. Panjala
  */
-public class WikipediaSpecialExportProcessor {
+public class SpecialExportProcessor {
     
     /**
      * convertSpecialExport - simple method to convert the export file to xml.
@@ -145,25 +145,25 @@ public class WikipediaSpecialExportProcessor {
             Element text = document.createElement("text");
             text.appendChild(document.createTextNode(wiki.PAGE_TOP_TEXT));
             //
-            for (int i = 0, s = wiki.categories.size(); i < s; i++) {
+            for (int i = 0, s = wiki.getCategories().size(); i < s; i++) {
                 if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.categories.get(i));
+                sb.append(wiki.getCategories().get(i));
                 if (i < s - 1) sb.append(" ");
             }
             Element categories = document.createElement("categories");
             categories.appendChild(document.createTextNode(sb.toString()));
             //
-            for (int i = 0, s = wiki.citations.size(); i < s; i++) {
+            for (int i = 0, s = wiki.getCitations().size(); i < s; i++) {
                 if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.citations.get(i));
+                sb.append(wiki.getCitations().get(i));
                 if (i < s - 1) sb.append(" ");
             }
             Element citations = document.createElement("citations");
             citations.appendChild(document.createTextNode(sb.toString()));
             //
-            for (int i = 0, s = wiki.anchors.size(); i < s; i++) {
+            for (int i = 0, s = wiki.getAnchors().size(); i < s; i++) {
                 if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.anchors.get(i));
+                sb.append(wiki.getAnchors().get(i));
                 if (i < s - 1) sb.append(" ");
             }
             Element anchors = document.createElement("anchors");
@@ -171,161 +171,5 @@ public class WikipediaSpecialExportProcessor {
         }
         return document;
     }
-    
-    /**
-     * WikipediaPage - wrapper class for wikipedias special export page data.
-     */
-    public class WikipediaPage {
-        
-        protected final String TITLE_OF_PAGE;   // the title of the wiki page
-        protected final String PAGE_TOP_TEXT;   // the lead section on the page
-        
-        private ArrayList<String> categories;   // categories listed on the page
-        private ArrayList<String> citations;    // citations used on the page
-        private ArrayList<String> anchors;      // hyperlinks used on the page
-        
-        /**
-         * 
-         * @param title
-         * @param text 
-         */
-        public WikipediaPage(String title, String text) {
-            categories = new ArrayList<>();
-            citations = new ArrayList<>();
-            anchors = new ArrayList<>();
-            TITLE_OF_PAGE = title;
-            PAGE_TOP_TEXT = text;
-        }
-        
-        public ArrayList<String> getCategories() { return this.categories; }
-        public ArrayList<String> getCitations() { return this.citations; }
-        public ArrayList<String> getAnchors() { return this.anchors; }
-        
-        /**
-         * 
-         * @param page 
-         */
-        public WikipediaPage(Element page) {
-            TITLE_OF_PAGE = getElementByTag(page, "title").trim();
-            char[] pageCharArr = getElementByTag(page, "text").toCharArray();
-            categories = initListByType(pageCharArr, "categories");
-            citations = initListByType(pageCharArr, "citations");
-            anchors = initListByType(pageCharArr, "anchors");
-            PAGE_TOP_TEXT = normalizeWikiPageTextForPOSTagging(pageCharArr);
-        }
-        
-        /**
-         * 
-         * @param page
-         * @param tag
-         * @return 
-         */
-        private String getElementByTag(Element page, String tag) {
-            return page.getElementsByTagName(tag).item(0).getTextContent();
-        }
-        
-        /**
-         * 
-         * @param symbols
-         * @param type
-         * @return 
-         */
-        private ArrayList<String> initListByType(char[] symbols, String type) {
-            
-            ArrayList<String> list = new ArrayList<>();
-            StringBuilder sb = null;
-            boolean reading = false;
-            int braceCount = 0;
-            char current, next;
-            
-            for (int i = 0; i < symbols.length - 1; i++) {
-                next = symbols[i + 1];  // hence length - 1
-                current = symbols[i];
-                if (current == '{' && !reading) braceCount++;
-                if (current == '}' && !reading) braceCount--;
-                if (braceCount > 0) continue;
-                if (current == '[' && next == '[') {
-                    sb = new StringBuilder();
-                    reading = true;
-                    i++; // step over second brace
-                } else if (current == ']' && next == ']') {
-                    String parsedTerm = parseTermByType(sb.toString(), type);
-                    if (!parsedTerm.isEmpty()) list.add(parsedTerm);
-                    reading = false;
-                    i++; // step over second brace
-                } else if (reading) {
-                    sb.append(current);
-                }
-            }
-            return list;
-        }
-        
-        /**
-         * 
-         * @param term
-         * @param type
-         * @return 
-         */
-        private String parseTermByType(String term, String type) {
-            
-            String prefix = (type.equals("citations")) ? "cite" : "Category:";
-            switch (type) {
-                case "categories":
-                    if (term.startsWith(prefix)) {
-                        return term.substring(prefix.length());
-                    }
-                    break;
-                case "citations":
-                    if (term.startsWith(prefix)) {
-                        String front = "title", back = "|";
-                        int begin = term.indexOf(front) + front.length();
-                        int end = term.indexOf(back, begin);
-                        if (begin > 0 && end > 0) {
-                            return term.substring(begin, end);
-                        }
-                    }
-                    break;
-                case "anchors":
-                    if (term.startsWith(prefix)) return "";
-                    int bar = term.indexOf('|');
-                    if (bar > 0) {
-                        return term.substring(0, bar);
-                    } else {
-                        return term.substring(0);
-                }
-            }
-            return "";
-        }
-        
-        /**
-         * 
-         * @param symbols
-         * @return 
-         */
-        private String normalizeWikiPageTextForPOSTagging(char[] symbols) {
-            
-            StringBuilder sb = new StringBuilder();
-            int braceCount = 0;
-            char current, next;
-            
-            for (int i = 0; i < symbols.length - 1; i++) {
-                next = symbols[i + 1];  // hence length - 1
-                current = symbols[i];
-                if (current == '=' && next == '=') break;
-                if (current == '{') braceCount++;
-                if (current == '}') braceCount--;
-                if (braceCount > 0) continue;
-                boolean letter = Character.isAlphabetic(current);
-                boolean white = Character.isWhitespace(current);
-                boolean digit = Character.isDigit(current);
-                if (letter || digit) {
-                    sb.append(current);
-                } else if (white) {
-                    sb.append(' ');
-                }
-            }
-            return sb.toString();
-        }
-        
-    } /* EOC - WikipediaPage */    
-} /* EOC - WikipediaSpecialExportProcessor */
+      
+} /* EOC - SpecialExportProcessor */
