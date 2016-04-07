@@ -49,11 +49,11 @@ import java.io.File;
 public class SpecialExportProcessor {
     
     /**
-     * convertSpecialExport - simple method to convert the export file to xml.
+     * convertSpecialExport - simple method for converting export file to XML.
      * 
      * @param inFileName - [path and] filename of special export file from web.
-     * @param outFileName - 
-     * @return
+     * @param outFileName - the desired output file name
+     * @return - the path to the completed output file
      * @throws ParserConfigurationException
      * @throws SAXException
      * @throws IOException
@@ -67,10 +67,14 @@ public class SpecialExportProcessor {
     }
     
     /**
-     * processSpecialExport - 
+     * processSpecialExport - takes a String as the only argument that contains
+     * the [path and] filename to the Wikipedia Special Export data file, which
+     * is then parsed by the org.w3c.dom.Document on tag name "page" iteratively
+     * and then creates a new WikipediaPage object for each page element in the
+     * Document Tree adding them to a list which is returned when complete.
      * 
-     * @param filename
-     * @return
+     * @param filename - the [path and] filename to the Special Export File
+     * @return - an ArrayList of WikipediaPage objects
      * @throws ParserConfigurationException
      * @throws SAXException
      * @throws IOException 
@@ -91,10 +95,11 @@ public class SpecialExportProcessor {
     }
     
     /**
+     * Simple method to save an ArrayList<WikipediaPage> object to XML format.
      * 
-     * @param wikiList
-     * @param filename
-     * @return
+     * @param wikiList - the ArrayList<WikipediaPage> to save
+     * @param filename - the desired output filename
+     * @return - the path to the saved output file
      * @throws ParserConfigurationException
      * @throws SAXException
      * @throws IOException
@@ -116,9 +121,11 @@ public class SpecialExportProcessor {
     }
     
     /**
+     * Helper method that converts the processed Special Export file, which is
+     * represented by a ArrayList<WikipediaPage>, into an org.w3c.dom.Document.
      * 
-     * @param wikiList
-     * @return
+     * @param wikiList - the processed data structure to be converted
+     * @return - a Document object populated by the wikiList argument
      * @throws ParserConfigurationException
      * @throws SAXException
      * @throws IOException 
