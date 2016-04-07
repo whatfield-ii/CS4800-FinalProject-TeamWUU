@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2016 William Hatfield, Utkarshani Jaimini, Uday Sagar Panjala.
+/* Copyright (c) 2016 William Hatfield, Utkarshani Jaimini, Uday Sagar Panjala.
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -15,11 +14,10 @@
  * You should have received a copy of the GNU General Public License along with
  * this program; if not, write to the Free Software Foundation, Inc. 51 Franklin
  * Street, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
  */
 
-package cs4800finalproject;
-import projectutilities.*;
+package cs4800finalproject; // this project and,
+import projectutilities.*;  // the project tools
 
 /**
  * Project Interface - provide user with a netbeans and command line interface.
