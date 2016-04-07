@@ -28,14 +28,17 @@ public class WikipediaPage {
     protected final String TITLE_OF_PAGE;   // the title of the wiki page
     protected final String PAGE_TOP_TEXT;   // the lead section on the page
 
-    private ArrayList<String> categories;   // categories listed on the page
-    private ArrayList<String> citations;    // citations used on the page
-    private ArrayList<String> anchors;      // hyperlinks used on the page
+    private final ArrayList<String> categories; // categories listed on the page
+    private final ArrayList<String> citations;  // citations used on the page
+    private final ArrayList<String> anchors;    // hyperlinks used on the page
 
     /**
+     * WikipediaPage - String Constructor: takes two string arguments that will
+     * be assigned as the page title and text of the WikipediaPage object while
+     * the three ArrayLists of type String are initialized and left empty.
      * 
-     * @param title
-     * @param text 
+     * @param title - string to be assigned as page title
+     * @param text - string to be assigned as page text
      */
     public WikipediaPage(String title, String text) {
         categories = new ArrayList<>();
@@ -44,14 +47,29 @@ public class WikipediaPage {
         TITLE_OF_PAGE = title;
         PAGE_TOP_TEXT = text;
     }
-
+    
+    // methods for retrieving the title and text of a wiki page
+    public String getTitle() { return this.TITLE_OF_PAGE; }
+    public String getText() { return this.PAGE_TOP_TEXT; }
+    
+    // methods for accessing the arraylists of wiki page parsed data
     public ArrayList<String> getCategories() { return this.categories; }
     public ArrayList<String> getCitations() { return this.citations; }
     public ArrayList<String> getAnchors() { return this.anchors; }
+    
+    // methods for adding new data to the wiki page array lists
+    public void pushCategory(String category) { this.categories.add(category); }
+    public void pushCitation(String citation) { this.citations.add(citation); }
+    public void pushAnchor(String anchor) { this.anchors.add(anchor); }
 
     /**
+     * WikipediaPage - Element Constructor: takes an org.w3c.dom.Element as the
+     * only argument, one which has been parsed from a Wikipedia Special Export
+     * data dump, retrieved from https://en.wikipedia.org/wiki/Special:Export ,
+     * where the parsing was done by the org.w3c.dom.Document member function 
+     * getElementsByTagName(String tag) and the tag value is "page".
      * 
-     * @param page 
+     * @param page - the DOM Element parsed by the DOM Document on a "page" tag
      */
     public WikipediaPage(Element page) {
         TITLE_OF_PAGE = getElementByTag(page, "title").trim();
@@ -63,20 +81,23 @@ public class WikipediaPage {
     }
 
     /**
+     * Returns the text of the first child element of page with matching tag.
      * 
-     * @param page
-     * @param tag
-     * @return 
+     * @param page - the parent element of the sought after tag text content
+     * @param tag - the tag name of the child text content to retrieve
+     * @return - text of pages first child with matching tag name
      */
     private String getElementByTag(Element page, String tag) {
         return page.getElementsByTagName(tag).item(0).getTextContent();
     }
 
     /**
+     * Crawls the char[] symbols and adds Strings to an ArrayList<String> where,
+     * the String being added is determined by the String type variable.
      * 
-     * @param symbols
-     * @param type
-     * @return 
+     * @param symbols - the character array to crawl for Strings
+     * @param type - "categories" or "citations" or "anchors"
+     * @return - list of all terms matching desired type
      */
     private ArrayList<String> initListByType(char[] symbols, String type) {
 
@@ -109,10 +130,12 @@ public class WikipediaPage {
     }
 
     /**
+     * Helper method for initListByType(char[] symbols, String type) that parses
+     * the data from the String term based on the String type argument.
      * 
-     * @param term
-     * @param type
-     * @return 
+     * @param term - the String possibly containing a desired term
+     * @param type - "categories" or "citations" or "anchors"
+     * @return - successfully parsed String or empty String
      */
     private String parseTermByType(String term, String type) {
 
@@ -146,9 +169,12 @@ public class WikipediaPage {
     }
 
     /**
+     * This method converts the char[] argument symbols into a single String,
+     * which is made up of only Letters, Digits, or Spaces in preparation for
+     * the Part-of-Speech tagging done by the Stanford NLP package.
      * 
-     * @param symbols
-     * @return 
+     * @param symbols - the char[] to build a POS Tagging ready String from
+     * @return - a String that can be efficiently POS Tagged
      */
     private String normalizeWikiPageTextForPOSTagging(char[] symbols) {
 
