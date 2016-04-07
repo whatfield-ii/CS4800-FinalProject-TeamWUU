@@ -17,7 +17,6 @@
  */
 package projectutilities;
 
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.TransformerException;
@@ -35,7 +34,13 @@ import java.io.IOException;
 import java.io.File;
 
 /**
- * WikipediaSpecialExportProcessor - collection of wikipedia data utilities.
+ * WikipediaSpecialExportProcessor - a collection of some file processing tools.
+ * 
+ * Developed to work with wikipedias special export files that can be retrieved
+ * from the https://en.wikipedia.org/wiki/Special:Export web page. This suite
+ * makes heavy use of the Document Object Model (DOM) for parsing the export and
+ * also for writing the processed data to disk. A simple wrapper class for the
+ * pages is also included to provide programmatic access to data at runtime.
  * 
  * @author W. Hatfield
  * @author U. Jaimini
@@ -43,6 +48,33 @@ import java.io.File;
  */
 public class WikipediaSpecialExportProcessor {
     
+    /**
+     * convertSpecialExport - simple method to convert the export file to xml.
+     * 
+     * @param inFileName - [path and] filename of special export file from web.
+     * @param outFileName - 
+     * @return
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     * @throws TransformerException 
+     */
+    public String convertSpecialExport(String inFileName, String outFileName)
+            throws ParserConfigurationException, SAXException, IOException,
+            TransformerException {
+        ArrayList<WikipediaPage> wikis = processSpecialExport(inFileName);
+        return saveAsXML(wikis, outFileName);
+    }
+    
+    /**
+     * processSpecialExport - 
+     * 
+     * @param filename
+     * @return
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException 
+     */
     public ArrayList<WikipediaPage> processSpecialExport(String filename)
             throws ParserConfigurationException, SAXException, IOException {
         
@@ -58,9 +90,19 @@ public class WikipediaSpecialExportProcessor {
         return list;
     }
     
+    /**
+     * 
+     * @param wikiList
+     * @param filename
+     * @return
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException
+     * @throws TransformerException 
+     */
     public String saveAsXML(ArrayList<WikipediaPage> wikiList, String filename)
             throws ParserConfigurationException, SAXException, IOException,
-            TransformerConfigurationException, TransformerException {
+            TransformerException {
         
         TransformerFactory factory = TransformerFactory.newInstance();
         Transformer transx = factory.newTransformer();
@@ -73,6 +115,14 @@ public class WikipediaSpecialExportProcessor {
         return "File Location: " + xmlFile.getPath();
     }
     
+    /**
+     * 
+     * @param wikiList
+     * @return
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws IOException 
+     */
     private Document makeXMLDocument(ArrayList<WikipediaPage> wikiList)
             throws ParserConfigurationException, SAXException, IOException {
         
@@ -122,10 +172,8 @@ public class WikipediaSpecialExportProcessor {
         return document;
     }
     
-    
-    
-    /** WikipediaPage.
-     * 
+    /**
+     * WikipediaPage - wrapper class for wikipedias special export page data.
      */
     public class WikipediaPage {
         
@@ -136,6 +184,11 @@ public class WikipediaSpecialExportProcessor {
         private ArrayList<String> citations;    // citations used on the page
         private ArrayList<String> anchors;      // hyperlinks used on the page
         
+        /**
+         * 
+         * @param title
+         * @param text 
+         */
         public WikipediaPage(String title, String text) {
             categories = new ArrayList<>();
             citations = new ArrayList<>();
@@ -148,6 +201,10 @@ public class WikipediaSpecialExportProcessor {
         public ArrayList<String> getCitations() { return this.citations; }
         public ArrayList<String> getAnchors() { return this.anchors; }
         
+        /**
+         * 
+         * @param page 
+         */
         public WikipediaPage(Element page) {
             TITLE_OF_PAGE = getElementByTag(page, "title").trim();
             char[] pageCharArr = getElementByTag(page, "text").toCharArray();
@@ -157,10 +214,22 @@ public class WikipediaSpecialExportProcessor {
             PAGE_TOP_TEXT = normalizeWikiPageTextForPOSTagging(pageCharArr);
         }
         
+        /**
+         * 
+         * @param page
+         * @param tag
+         * @return 
+         */
         private String getElementByTag(Element page, String tag) {
             return page.getElementsByTagName(tag).item(0).getTextContent();
         }
         
+        /**
+         * 
+         * @param symbols
+         * @param type
+         * @return 
+         */
         private ArrayList<String> initListByType(char[] symbols, String type) {
             
             ArrayList<String> list = new ArrayList<>();
@@ -191,6 +260,12 @@ public class WikipediaSpecialExportProcessor {
             return list;
         }
         
+        /**
+         * 
+         * @param term
+         * @param type
+         * @return 
+         */
         private String parseTermByType(String term, String type) {
             
             String prefix = (type.equals("citations")) ? "cite" : "Category:";
@@ -222,6 +297,11 @@ public class WikipediaSpecialExportProcessor {
             return "";
         }
         
+        /**
+         * 
+         * @param symbols
+         * @return 
+         */
         private String normalizeWikiPageTextForPOSTagging(char[] symbols) {
             
             StringBuilder sb = new StringBuilder();
