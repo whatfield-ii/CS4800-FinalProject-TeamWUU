@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2016 William Hatfield, Utkarshani Jaimini, Uday Sagar Panjala.
  * 
  * This program is free software; you can redistribute it and/or modify it
@@ -16,8 +17,8 @@
  * Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package cs4800finalproject; // this project and,
-import projectutilities.*;  // the project tools
+package cs4800finalproject; // this project package
+import projectutilities.*;  // and a toolbox for it
 
 /**
  * Project Interface - provide user with a netbeans and command line interface.
@@ -37,8 +38,7 @@ public class ProjectInterface {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        
-        //
+        System.out.println("Hello World!");
     }
     
 }
