@@ -22,7 +22,7 @@ import java.util.Map.Entry;
 import java.util.HashMap;
 
 /**
- * SimpleStanfordPOSTagging.
+ * StandfordSpeechTaggerAndCounter.
  *
  * @author W. Hatfield
  * @author U. Jaimini
@@ -30,7 +30,8 @@ import java.util.HashMap;
  */
 public class StandfordSpeechTaggerAndCounter {
     
-    private static final String MODELFILE = "tagger/english-left3words-distsim.tagger";
+    private static final String MODELFILE =
+            "jars/stanford-postagger-3.6.0/english-left3words-distsim.tagger";
     private static final MaxentTagger TAGGER = new MaxentTagger(MODELFILE);
     private static final HashMap<String, Integer> MAP = new HashMap<>();
     
