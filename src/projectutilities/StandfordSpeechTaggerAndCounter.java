@@ -28,11 +28,11 @@ import java.util.HashMap;
  * @author U. Jaimini
  * @author U. Panjala
  */
-public class StandfordSpeechTaggerAndAnalyzer {
+public class StandfordSpeechTaggerAndCounter {
     
+    private static final String MODELFILE = "tagger/english-left3words-distsim.tagger";
+    private static final MaxentTagger TAGGER = new MaxentTagger(MODELFILE);
     private static final HashMap<String, Integer> MAP = new HashMap<>();
-    private final String MODELFILE = "tagger/english-left3words-distsim.tagger";
-    private final MaxentTagger TAGGER = new MaxentTagger(MODELFILE);
     
     /**
      * tagNormalizedString - takes a single String argument, that should have
@@ -76,6 +76,11 @@ public class StandfordSpeechTaggerAndAnalyzer {
         }
         return mostCommonWord;
     }
+    
+    /**
+     * Clears the collection of processed words and their counts.
+     */
+    public void resetWordCount() { MAP.clear(); }
     
     /**
      * getWordCountOf - returns the word count of the string or -1 if no string.

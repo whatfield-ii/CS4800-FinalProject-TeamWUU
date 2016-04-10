@@ -51,6 +51,8 @@ public class WikipediaSpecialExportProcessor {
     /**
      * convertSpecialExport - simple method for converting export file to XML.
      * 
+     * Output Directory: _files/WikipediaSpecialExportProcessor/XMLOutputFiles/
+     * 
      * @param inFileName - [path and] filename of special export file from web.
      * @param outFileName - the desired output file name
      * @return - the path to the completed output file
@@ -63,7 +65,8 @@ public class WikipediaSpecialExportProcessor {
             throws ParserConfigurationException, SAXException, IOException,
             TransformerException {
         ArrayList<WikipediaPage> wikis = processSpecialExport(inFileName);
-        return saveAsXML(wikis, outFileName);
+        String dir = "_files/WikipediaSpecialExportProcessor/XMLOutputFiles/";
+        return saveAsXML(wikis, dir + outFileName);
     }
     
     /**
@@ -79,7 +82,7 @@ public class WikipediaSpecialExportProcessor {
      * @throws SAXException
      * @throws IOException 
      */
-    public ArrayList<WikipediaPage> processSpecialExport(String filename)
+    private ArrayList<WikipediaPage> processSpecialExport(String filename)
             throws ParserConfigurationException, SAXException, IOException {
         
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -105,7 +108,7 @@ public class WikipediaSpecialExportProcessor {
      * @throws IOException
      * @throws TransformerException 
      */
-    public String saveAsXML(ArrayList<WikipediaPage> wikiList, String filename)
+    private String saveAsXML(ArrayList<WikipediaPage> wikiList, String filename)
             throws ParserConfigurationException, SAXException, IOException,
             TransformerException {
         
@@ -182,7 +185,7 @@ public class WikipediaSpecialExportProcessor {
     /**
      * WikipediaPage - wrapper class for wikipedias special export page data.
      */
-    public class WikipediaPage {
+    private class WikipediaPage {
 
         protected final String TITLE_OF_PAGE;   // the title of the wiki page
         protected final String PAGE_TOP_TEXT;   // the lead section on the page
@@ -208,18 +211,18 @@ public class WikipediaSpecialExportProcessor {
         }
 
         // methods for retrieving the title and text of a wiki page
-        public String getTitle() { return this.TITLE_OF_PAGE; }
-        public String getText() { return this.PAGE_TOP_TEXT; }
+        public String getTitle() { return TITLE_OF_PAGE; }
+        public String getText() { return PAGE_TOP_TEXT; }
 
         // methods for accessing the arraylists of wiki page parsed data
-        public ArrayList<String> getCategories() { return this.categories; }
-        public ArrayList<String> getCitations() { return this.citations; }
-        public ArrayList<String> getAnchors() { return this.anchors; }
+        public ArrayList<String> getCategories() { return categories; }
+        public ArrayList<String> getCitations() { return citations; }
+        public ArrayList<String> getAnchors() { return anchors; }
 
         // methods for adding new data to the wiki page array lists
-        public void pushCategory(String category) { this.categories.add(category); }
-        public void pushCitation(String citation) { this.citations.add(citation); }
-        public void pushAnchor(String anchor) { this.anchors.add(anchor); }
+        public void pushCategory(String category) { categories.add(category); }
+        public void pushCitation(String citation) { citations.add(citation); }
+        public void pushAnchor(String anchor) { anchors.add(anchor); }
 
         /**
          * WikipediaPage - Element Constructor: takes an org.w3c.dom.Element as the
