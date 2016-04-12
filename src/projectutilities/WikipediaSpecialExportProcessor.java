@@ -17,6 +17,7 @@
  */
 package projectutilities;
 
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.TransformerException;
@@ -39,330 +40,283 @@ import java.io.File;
  * Developed to work with wikipedias special export files that can be retrieved
  * from the https://en.wikipedia.org/wiki/Special:Export web page. This suite
  * makes heavy use of the Document Object Model (DOM) for parsing the export and
- * also for writing the processed data to disk. A simple wrapper class for the
- * pages is also included to provide programmatic access to data at runtime.
+ * also for writing the processed data to disk.
  * 
  * @author W. Hatfield
  * @author U. Jaimini
  * @author U. Panjala
  */
 public class WikipediaSpecialExportProcessor {
-    
     /**
-     * convertSpecialExport - simple method for converting export file to XML.
-     * 
-     * Output Directory: _files/WikipediaSpecialExportProcessor/XMLOutputFiles/
-     * 
-     * @param inFileName - [path and] filename of special export file from web.
-     * @param outFileName - the desired output file name
-     * @return - the path to the completed output file
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     * @throws IOException
-     * @throws TransformerException 
+     * The (simple) Wikipedia Page Data Structure
      */
-    public String convertSpecialExport(String inFileName, String outFileName)
-            throws ParserConfigurationException, SAXException, IOException,
-            TransformerException {
-        ArrayList<WikipediaPage> wikis = processSpecialExport(inFileName);
-        String dir = "_files/WikipediaSpecialExportProcessor/XMLOutputFiles/";
-        return saveAsXML(wikis, dir + outFileName);
+    private class WikiPage {
+        public ArrayList<String> categories;
+        public ArrayList<String> anchors;
+        public String title, text;
     }
     
     /**
-     * processSpecialExport - takes a String as the only argument that contains
-     * the [path and] filename to the Wikipedia Special Export data file, which
-     * is then parsed by the org.w3c.dom.Document on tag name "page" iteratively
-     * and then creates a new WikipediaPage object for each page element in the
-     * Document Tree adding them to a list which is returned when complete.
      * 
-     * @param filename - the [path and] filename to the Special Export File
-     * @return - an ArrayList of WikipediaPage objects
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     * @throws IOException 
+     * @param filename
+     * @return 
      */
-    private ArrayList<WikipediaPage> processSpecialExport(String filename)
-            throws ParserConfigurationException, SAXException, IOException {
+    public ArrayList<String> getTextsFromProcessedExport(String filename) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(filename);
+            
+            NodeList nodes = document.getElementsByTagName("page");
+            ArrayList<String> texts = new ArrayList<>(nodes.getLength());
+            
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Element page = (Element) nodes.item(i);
+                String s = page.getElementsByTagName("text").item(0).getTextContent();
+                texts.add(s);
+            }
+            
+            return texts;
+            
+        } catch (ParserConfigurationException | SAXException | IOException ex) {
+            System.err.println("ERR @ getTextsFromProcessedExport: " + ex.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 
+     * @param export
+     * @param xml 
+     */
+    public void convertSpecialExport(String export, String xml) {
+        Document document = importSpecialExport(export);
+        saveDocumentAsXML(document, xml);
+    }
+    
+    /**
+     * 
+     * @param filename
+     * @return 
+     */
+    private Document importSpecialExport(String filename) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(filename);
+            
+            NodeList nodes = document.getElementsByTagName("page");
+            ArrayList<WikiPage> wikis = processPageNodeList(nodes);
+            
+            Document processed = makeDocumentFromWikis(wikis);
+            return processed;
+            
+        } catch (ParserConfigurationException | SAXException | IOException ex) {
+            System.err.println("ERR @ importSpecialExport: " + ex.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 
+     * @param nodelist
+     * @return 
+     */
+    private ArrayList<WikiPage> processPageNodeList(NodeList nodelist) {
         
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(filename);
-        NodeList nodes = document.getElementsByTagName("page");
-        
-        ArrayList<WikipediaPage> list = new ArrayList<>();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            list.add(new WikipediaPage((Element)nodes.item(i)));
+        ArrayList<WikiPage> wikis = new ArrayList<>(nodelist.getLength());
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            //
+            Element page = (Element) nodelist.item(i);
+            //
+            String title = page.getElementsByTagName("title").item(0).getTextContent().trim();
+            char[] chars = page.getElementsByTagName("text").item(0).getTextContent().toCharArray();
+            String text = normalizeWikiPageTextForPOSTagging(chars);
+            //
+            ArrayList<String> categories = parseTextByType(chars, "categories");
+            ArrayList<String> anchors = parseTextByType(chars, "anchors");
+            //
+            WikiPage wikipage = new WikiPage();
+            wikipage.categories = categories;
+            wikipage.anchors = anchors;
+            wikipage.title = title;
+            wikipage.text = text;
+            //
+            wikis.add(wikipage);
+        }
+        return wikis;
+    }
+
+    /**
+     * 
+     * @param symbols
+     * @return 
+     */
+    private String normalizeWikiPageTextForPOSTagging(char[] symbols) {
+
+        StringBuilder sb = new StringBuilder();
+        int braceCount = 0;
+        char current, next;
+
+        for (int i = 0; i < symbols.length - 1; i++) {
+            next = symbols[i + 1];  // hence length - 1
+            current = symbols[i];
+            if (current == '=' && next == '=') break;
+            if (current == '{') braceCount++;
+            if (current == '}') braceCount--;
+            if (braceCount > 0) continue;
+            boolean letter = Character.isAlphabetic(current);
+            boolean white = Character.isWhitespace(current);
+            boolean digit = Character.isDigit(current);
+            if (letter || digit) {
+                sb.append(current);
+            } else if (white) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 
+     * @param symbols
+     * @param type
+     * @return 
+     */
+    private ArrayList<String> parseTextByType(char[] symbols, String type) {
+
+        ArrayList<String> list = new ArrayList<>();
+        StringBuilder sb = null;
+        boolean reading = false;
+        int braceCount = 0;
+        char current, next;
+
+        for (int i = 0; i < symbols.length - 1; i++) {
+            next = symbols[i + 1];  // hence length - 1
+            current = symbols[i];
+            if (current == '{' && !reading) braceCount++;
+            if (current == '}' && !reading) braceCount--;
+            if (braceCount > 0) continue;
+            if (current == '[' && next == '[') {
+                sb = new StringBuilder();
+                reading = true;
+                i++; // step over second brace
+            } else if (current == ']' && next == ']') {
+                String parsedTerm = parseTermByType(sb.toString(), type);
+                if (!parsedTerm.isEmpty()) list.add(parsedTerm);
+                reading = false;
+                i++; // step over second brace
+            } else if (reading) {
+                sb.append(current);
+            }
         }
         return list;
     }
-    
+
     /**
-     * Simple method to save an ArrayList<WikipediaPage> object to XML format.
      * 
-     * @param wikiList - the ArrayList<WikipediaPage> to save
-     * @param filename - the desired output filename
-     * @return - the path to the saved output file
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     * @throws IOException
-     * @throws TransformerException 
+     * @param term
+     * @param type
+     * @return 
      */
-    private String saveAsXML(ArrayList<WikipediaPage> wikiList, String filename)
-            throws ParserConfigurationException, SAXException, IOException,
-            TransformerException {
-        
-        TransformerFactory factory = TransformerFactory.newInstance();
-        Transformer transx = factory.newTransformer();
-        Document document = makeXMLDocument(wikiList);
-        DOMSource source = new DOMSource(document);
-        File xmlFile = new File(filename);
-        StreamResult result = new StreamResult(xmlFile);
-        transx.transform(source, result);
-        
-        return "File Location: " + xmlFile.getPath();
+    private String parseTermByType(String term, String type) {
+
+        String prefix = "Category:";
+        switch (type) {
+            case "categories":
+                if (term.startsWith("Category:")) {
+                    return term.substring("Category:".length());
+                }
+                break;
+            case "anchors":
+                if (term.startsWith(prefix)) return "";
+                int bar = term.indexOf('|');
+                if (bar > 0) {
+                    return term.substring(0, bar);
+                } else {
+                    return term.substring(0);
+            }
+        }
+        return "";
     }
     
     /**
-     * Helper method that converts the processed Special Export file, which is
-     * represented by a ArrayList<WikipediaPage>, into an org.w3c.dom.Document.
      * 
-     * @param wikiList - the processed data structure to be converted
-     * @return - a Document object populated by the wikiList argument
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     * @throws IOException 
+     * @param wikilist
+     * @return 
      */
-    private Document makeXMLDocument(ArrayList<WikipediaPage> wikiList)
-            throws ParserConfigurationException, SAXException, IOException {
-        
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.newDocument();
-        Element root = document.createElement("ProcessedSpecialExportData");
-        document.appendChild(root);
-        StringBuilder sb = null;
-        
-        for (WikipediaPage wiki : wikiList) {
+    private Document makeDocumentFromWikis(ArrayList<WikiPage> wikilist) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.newDocument();
             //
-            Element page = document.createElement("page");
-            root.appendChild(page);
+            Element root = document.createElement("ProcessedSpecialExportData");
+            document.appendChild(root);
             //
-            Element title = document.createElement("title");
-            title.appendChild(document.createTextNode(wiki.TITLE_OF_PAGE));
-            page.appendChild(title);
-            //
-            Element text = document.createElement("text");
-            text.appendChild(document.createTextNode(wiki.PAGE_TOP_TEXT));
-            //
-            for (int i = 0, s = wiki.getCategories().size(); i < s; i++) {
-                if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.getCategories().get(i));
-                if (i < s - 1) sb.append(" ");
+            for (WikiPage wikipage : wikilist) {
+                //
+                Element title = document.createElement("title");
+                title.appendChild(document.createTextNode(wikipage.title));
+                //
+                Element text = document.createElement("text");
+                text.appendChild(document.createTextNode(wikipage.text));
+                //
+                Element categories = document.createElement("categories");
+                String cat_Text = stringifyList(wikipage.categories);
+                categories.appendChild(document.createTextNode(cat_Text));
+                //
+                Element anchors = document.createElement("anchors");
+                String anc_Text = stringifyList(wikipage.anchors);
+                anchors.appendChild(document.createTextNode(anc_Text));
+                //
+                Element page = document.createElement("page");
+                root.appendChild(page);
+                //
+                page.appendChild(title);
+                page.appendChild(text);
+                page.appendChild(categories);
+                page.appendChild(anchors);
+                //
             }
-            Element categories = document.createElement("categories");
-            categories.appendChild(document.createTextNode(sb.toString()));
-            //
-            for (int i = 0, s = wiki.getCitations().size(); i < s; i++) {
-                if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.getCitations().get(i));
-                if (i < s - 1) sb.append(" ");
-            }
-            Element citations = document.createElement("citations");
-            citations.appendChild(document.createTextNode(sb.toString()));
-            //
-            for (int i = 0, s = wiki.getAnchors().size(); i < s; i++) {
-                if (i == 0) sb = new StringBuilder();
-                sb.append(wiki.getAnchors().get(i));
-                if (i < s - 1) sb.append(" ");
-            }
-            Element anchors = document.createElement("anchors");
-            anchors.appendChild(document.createTextNode(sb.toString()));
+            return document;
+        } catch (ParserConfigurationException ex) {
+            System.err.println("ParserConfigurationException: " + ex.getMessage());
         }
-        return document;
+        return null;
     }
     
     /**
-     * WikipediaPage - wrapper class for wikipedias special export page data.
+     * 
+     * @param list
+     * @return 
      */
-    private class WikipediaPage {
-
-        protected final String TITLE_OF_PAGE;   // the title of the wiki page
-        protected final String PAGE_TOP_TEXT;   // the lead section on the page
-
-        private final ArrayList<String> categories; // categories listed on the page
-        private final ArrayList<String> citations;  // citations used on the page
-        private final ArrayList<String> anchors;    // hyperlinks used on the page
-
-        /**
-         * WikipediaPage - String Constructor: takes two string arguments that will
-         * be assigned as the page title and text of the WikipediaPage object while
-         * the three ArrayLists of type String are initialized and left empty.
-         * 
-         * @param title - string to be assigned as page title
-         * @param text - string to be assigned as page text
-         */
-        public WikipediaPage(String title, String text) {
-            categories = new ArrayList<>();
-            citations = new ArrayList<>();
-            anchors = new ArrayList<>();
-            TITLE_OF_PAGE = title;
-            PAGE_TOP_TEXT = text;
+    private String stringifyList(ArrayList<String> list) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : list) {
+            sb.append(' ');
+            sb.append(s);
         }
-
-        // methods for retrieving the title and text of a wiki page
-        public String getTitle() { return TITLE_OF_PAGE; }
-        public String getText() { return PAGE_TOP_TEXT; }
-
-        // methods for accessing the arraylists of wiki page parsed data
-        public ArrayList<String> getCategories() { return categories; }
-        public ArrayList<String> getCitations() { return citations; }
-        public ArrayList<String> getAnchors() { return anchors; }
-
-        // methods for adding new data to the wiki page array lists
-        public void pushCategory(String category) { categories.add(category); }
-        public void pushCitation(String citation) { citations.add(citation); }
-        public void pushAnchor(String anchor) { anchors.add(anchor); }
-
-        /**
-         * WikipediaPage - Element Constructor: takes an org.w3c.dom.Element as the
-         * only argument, one which has been parsed from a Wikipedia Special Export
-         * data dump, retrieved from https://en.wikipedia.org/wiki/Special:Export ,
-         * where the parsing was done by the org.w3c.dom.Document member function 
-         * getElementsByTagName(String tag) and the tag value is "page".
-         * 
-         * @param page - the DOM Element parsed by the DOM Document on a "page" tag
-         */
-        public WikipediaPage(Element page) {
-            TITLE_OF_PAGE = getElementByTag(page, "title").trim();
-            char[] pageCharArr = getElementByTag(page, "text").toCharArray();
-            categories = initListByType(pageCharArr, "categories");
-            citations = initListByType(pageCharArr, "citations");
-            anchors = initListByType(pageCharArr, "anchors");
-            PAGE_TOP_TEXT = normalizeWikiPageTextForPOSTagging(pageCharArr);
+        return sb.toString();
+    }
+    
+    /**
+     * 
+     * @param document
+     * @param filename 
+     */
+    private void saveDocumentAsXML(Document document, String filename) {
+        try {
+            TransformerFactory factory = TransformerFactory.newInstance();
+            Transformer transformer = factory.newTransformer();
+            DOMSource source = new DOMSource(document);
+            File xmlFile = new File(filename);
+            StreamResult result = new StreamResult(xmlFile);
+            transformer.transform(source, result);
+        } catch (TransformerConfigurationException ex) {
+            System.err.println("TransformerConfigurationException: " + ex.getMessage());
+        } catch (TransformerException ex) {
+            System.err.println("TransformerException: " + ex.getMessage());
         }
-
-        /**
-         * Returns the text of the first child element of page with matching tag.
-         * 
-         * @param page - the parent element of the sought after tag text content
-         * @param tag - the tag name of the child text content to retrieve
-         * @return - text of pages first child with matching tag name
-         */
-        private String getElementByTag(Element page, String tag) {
-            return page.getElementsByTagName(tag).item(0).getTextContent();
-        }
-
-        /**
-         * Crawls the char[] symbols and adds Strings to an ArrayList<String> where,
-         * the String being added is determined by the String type variable.
-         * 
-         * @param symbols - the character array to crawl for Strings
-         * @param type - "categories" or "citations" or "anchors"
-         * @return - list of all terms matching desired type
-         */
-        private ArrayList<String> initListByType(char[] symbols, String type) {
-
-            ArrayList<String> list = new ArrayList<>();
-            StringBuilder sb = null;
-            boolean reading = false;
-            int braceCount = 0;
-            char current, next;
-
-            for (int i = 0; i < symbols.length - 1; i++) {
-                next = symbols[i + 1];  // hence length - 1
-                current = symbols[i];
-                if (current == '{' && !reading) braceCount++;
-                if (current == '}' && !reading) braceCount--;
-                if (braceCount > 0) continue;
-                if (current == '[' && next == '[') {
-                    sb = new StringBuilder();
-                    reading = true;
-                    i++; // step over second brace
-                } else if (current == ']' && next == ']') {
-                    String parsedTerm = parseTermByType(sb.toString(), type);
-                    if (!parsedTerm.isEmpty()) list.add(parsedTerm);
-                    reading = false;
-                    i++; // step over second brace
-                } else if (reading) {
-                    sb.append(current);
-                }
-            }
-            return list;
-        }
-
-        /**
-         * Helper method for initListByType(char[] symbols, String type) that parses
-         * the data from the String term based on the String type argument.
-         * 
-         * @param term - the String possibly containing a desired term
-         * @param type - "categories" or "citations" or "anchors"
-         * @return - successfully parsed String or empty String
-         */
-        private String parseTermByType(String term, String type) {
-
-            String prefix = (type.equals("citations")) ? "cite" : "Category:";
-            switch (type) {
-                case "categories":
-                    if (term.startsWith(prefix)) {
-                        return term.substring(prefix.length());
-                    }
-                    break;
-                case "citations":
-                    if (term.startsWith(prefix)) {
-                        String front = "title", back = "|";
-                        int begin = term.indexOf(front) + front.length();
-                        int end = term.indexOf(back, begin);
-                        if (begin > 0 && end > 0) {
-                            return term.substring(begin, end);
-                        }
-                    }
-                    break;
-                case "anchors":
-                    if (term.startsWith(prefix)) return "";
-                    int bar = term.indexOf('|');
-                    if (bar > 0) {
-                        return term.substring(0, bar);
-                    } else {
-                        return term.substring(0);
-                }
-            }
-            return "";
-        }
-
-        /**
-         * This method converts the char[] argument symbols into a single String,
-         * which is made up of only Letters, Digits, or Spaces in preparation for
-         * the Part-of-Speech tagging done by the Stanford NLP package.
-         * 
-         * @param symbols - the char[] to build a POS Tagging ready String from
-         * @return - a String that can be efficiently POS Tagged
-         */
-        private String normalizeWikiPageTextForPOSTagging(char[] symbols) {
-
-            StringBuilder sb = new StringBuilder();
-            int braceCount = 0;
-            char current, next;
-
-            for (int i = 0; i < symbols.length - 1; i++) {
-                next = symbols[i + 1];  // hence length - 1
-                current = symbols[i];
-                if (current == '=' && next == '=') break;
-                if (current == '{') braceCount++;
-                if (current == '}') braceCount--;
-                if (braceCount > 0) continue;
-                boolean letter = Character.isAlphabetic(current);
-                boolean white = Character.isWhitespace(current);
-                boolean digit = Character.isDigit(current);
-                if (letter || digit) {
-                    sb.append(current);
-                } else if (white) {
-                    sb.append(' ');
-                }
-            }
-            return sb.toString();
-        }
-
-    } /* EOC - WikipediaPage */  
-      
-} /* EOC - WikipediaSpecialExportProcessor */
+    }
+}

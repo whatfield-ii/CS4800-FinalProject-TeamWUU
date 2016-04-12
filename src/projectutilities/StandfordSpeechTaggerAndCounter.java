@@ -19,7 +19,10 @@ package projectutilities;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import java.util.Map.Entry;
+import java.io.IOException;
+import java.io.FileWriter;
 import java.util.HashMap;
+import java.io.File;
 
 /**
  * StandfordSpeechTaggerAndCounter.
@@ -34,6 +37,21 @@ public class StandfordSpeechTaggerAndCounter {
             "jars/stanford-postagger-3.6.0/english-left3words-distsim.tagger";
     private static final MaxentTagger TAGGER = new MaxentTagger(MODELFILE);
     private static final HashMap<String, Integer> MAP = new HashMap<>();
+    
+    /**
+     * 
+     * @param text
+     * @param filename 
+     */
+    public void tagTextAndWriteFile(String text, String filename) {
+        try {
+            FileWriter fw = new FileWriter(new File(filename));
+            fw.write(tagNormalizedString(text));
+            fw.close();
+        } catch (IOException ex) {
+            System.err.println("IOException: " + ex.getMessage());
+        }
+    }
     
     /**
      * tagNormalizedString - takes a single String argument, that should have
@@ -57,43 +75,22 @@ public class StandfordSpeechTaggerAndCounter {
         return taggedString;
     }
     
-    /**
-     * getMostCommonWord - returns the string with the highest count from all
-     * previously processed strings, until the word count has been reset.
-     * @return - the most common word from processed strings
-     */
-    public String getMostCommonWord() {
-        String mostCommonWord = "";
-        Integer highestCount = -1;
-        Integer currentCount;
-        for (Entry<String, Integer> entry : MAP.entrySet()) {
-            currentCount = entry.getValue();
-            if (highestCount.equals(currentCount)) {
-                mostCommonWord = mostCommonWord + entry.getKey();
-            } else if (currentCount > highestCount) {
-                mostCommonWord = entry.getKey();
-                highestCount = currentCount;
+    public void writeReport(String filename) {
+        try {
+            FileWriter fw = new FileWriter(new File(filename));
+            for (Entry<String, Integer> entry : MAP.entrySet()) {
+                String toWrite = entry.getKey() + " -> " + entry.getValue();
+                fw.write(toWrite + "\n");
             }
+            fw.close();
+        } catch (IOException ex) {
+            System.err.println("IOException: " + ex.getMessage());
         }
-        return mostCommonWord;
     }
     
     /**
      * Clears the collection of processed words and their counts.
      */
     public void resetWordCount() { MAP.clear(); }
-    
-    /**
-     * getWordCountOf - returns the word count of the string or -1 if no string.
-     * 
-     * @param word - word to return the count of
-     * @return - the count of word or -1
-     */
-    public int getWordCountOf(String word) {
-        Integer wordCount = MAP.get(word);
-        return (wordCount > 0) ? wordCount : -1;
-    }
-    
-    
     
 }
