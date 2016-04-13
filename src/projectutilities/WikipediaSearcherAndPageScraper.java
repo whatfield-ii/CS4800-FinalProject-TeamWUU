@@ -26,6 +26,7 @@ import com.jaunt.ResponseException;
 import com.jaunt.SearchException;
 import com.jaunt.UserAgent;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 /**
  *
@@ -41,6 +42,20 @@ public class WikipediaSearcherAndPageScraper {
     //
     private final UserAgent USER_AGENT = new UserAgent();
     
+    public HashMap<String, String> getSearchResultDetails() {
+        HashMap<String, String> map = new HashMap<>();
+        for (Entry<String, SearchResult> entry : RESULTS_MAP.entrySet()) {
+            String searchTerm = entry.getKey();
+            String details = entry.getValue().text;
+            map.put(searchTerm, details);
+        }
+        return map;
+    }
+    
+    public String getSearchTermHREF(String searchTerm) {
+        String href = RESULTS_MAP.get(searchTerm).href;
+        return href;
+    }
     
     /**
      * 

@@ -34,7 +34,6 @@ import java.io.File;
  * @author U. Panjala
  */
 public class ProjectInterface {
-    private static final boolean DEBUG = true;
     /**************************************************************************/
     private static final WikipediaSearcherAndPageScraper WSPS = new WikipediaSearcherAndPageScraper();
     private static final WikipediaSpecialExportProcessor WSEP = new WikipediaSpecialExportProcessor();
@@ -55,27 +54,27 @@ public class ProjectInterface {
     private static final String TAGGER_TESTING = SSTC_DIRECTORY + "_TagTesting.txt";
     private static final String TESTING_REPORT = SSTC_DIRECTORY + "_TestCount.txt";
     //
-    private static final String OBJECTS_REPORT = SSTC_DIRECTORY + "objects.txt";
-    private static final String WOMENS_REPORT = SSTC_DIRECTORY + "women.txt";
-    private static final String MENS_REPORT = SSTC_DIRECTORY + "men.txt";
-    //
     private static final String TAGGED_OBJECTS = SSTC_DIRECTORY + "objects/";
     private static final String TAGGED_WOMEN = SSTC_DIRECTORY + "women/";
     private static final String TAGGED_MEN = SSTC_DIRECTORY + "men/";
+    //
+    private static final String OBJECTS_REPORT = TAGGED_OBJECTS + "_objects.txt";
+    private static final String WOMENS_REPORT = TAGGED_WOMEN + "_women.txt";
+    private static final String MENS_REPORT = TAGGED_MEN + "_men.txt";
     /**************************************************************************/
     /**_files/ <-- THE DATA FILE DIRECTORY STRUCTURE FOR THIS PROJECT -->
-     * |--> WikipediaSpecialExportProcessor/            WSEP_DIRECTORY
-     * |    |--> SpecialExportFiles/                    EXPORT_FILES
-     * |    |--> XMLOutputFiles/                        XMLOUT_FILES
-     * |--> StandfordSpeechTaggerAndCounter/            SSTC_DIRECTORY
-     * |    |--> _TagTesting.txt                        TAGGER_TESTING
-     * |    |--> _TestCount.txt                         TESTING_REPORT
-     * |    |--> objects.txt                            OBJECTS_REPORT
-     * |    |--> women.txt                              WOMENS_REPORT
-     * |    |--> men.txt                                MENS_REPORT
-     * |    |--> objects/                               TAGGED_OBJECTS
-     * |    |--> women/                                 TAGGED_WOMEN
-     * |    |--> men/                                   TAGGED_MEN
+     * |--> WikipediaSpecialExportProcessor/    WSEP_DIRECTORY
+     * |  |--> SpecialExportFiles/              EXPORT_FILES
+     * |  |--> XMLOutputFiles/                  XMLOUT_FILES
+     * |--> StandfordSpeechTaggerAndCounter/    SSTC_DIRECTORY
+     * |  |--> _TagTesting.txt                  TAGGER_TESTING
+     * |  |--> _TestCount.txt                   TESTING_REPORT
+     * |  |--> objects/                         TAGGED_OBJECTS
+     * |  |  |--> _objects.txt                  OBJECTS_REPORT
+     * |  |--> women/                           TAGGED_WOMEN
+     * |  |  |--> _women.txt                    WOMENS_REPORT
+     * |  |--> men/                             TAGGED_MEN
+     * |  |  |--> _men.txt                      MENS_REPORT
      * END
      */
     /**************************************************************************/
@@ -86,6 +85,20 @@ public class ProjectInterface {
     public static void main(String[] args) {
         initWikipediaSpecialExportProcessor();
         parseAndTagProcessedExportTexts();
+        // start the training of the machine
+        searchWikipediaForArticle();
+    }
+    
+    private static String searchWikipediaForArticle() {
+        System.out.println("What or Who would you like to search for?");
+        System.out.print("Enter Search Term: ");
+        String searchTerm = KBIN.nextLine().trim();
+        KBIN.nextLine(); // clear the keyboard buffer
+        System.out.println(""); // print a line
+        WSPS.searchWikipedia(searchTerm);
+        //HashMap<String, String> resultsMap = WSPS.getSearchResultDetails();
+        //Set<Map.Entry<String, String>> resultSet = resultsMap.entrySet();
+        return null;
     }
     
     private static void parseAndTagProcessedExportTexts() {
@@ -186,8 +199,9 @@ public class ProjectInterface {
                     if (exportType.equals("objects") 
                      || exportType.equals("women")
                      || exportType.equals("men")) {
-                        String xmlFileName = exportType + ".xml";
-                        WSEP.convertSpecialExport(fileName, xmlFileName);
+                        String xmlFileName = XMLOUT_FILES + exportType + ".xml";
+                        String exportInput = EXPORT_FILES + fileName;
+                        WSEP.convertSpecialExport(exportInput, xmlFileName);
                     } else {
                         System.err.print("ERR: Export File Not Processed: ");
                         System.err.println(EXPORT_FILES + fileName);

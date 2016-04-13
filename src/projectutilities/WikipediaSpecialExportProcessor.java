@@ -65,8 +65,10 @@ public class WikipediaSpecialExportProcessor {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
+            System.out.println("Last Known Position");
             Document document = builder.parse(filename);
             
+            System.out.println("nodes");
             NodeList nodes = document.getElementsByTagName("page");
             ArrayList<String> texts = new ArrayList<>(nodes.getLength());
             
@@ -79,7 +81,7 @@ public class WikipediaSpecialExportProcessor {
             return texts;
             
         } catch (ParserConfigurationException | SAXException | IOException ex) {
-            System.err.println("ERR @ getTextsFromProcessedExport: " + ex.getMessage());
+            System.err.println("ERR @ getTextsFromProcessedExport: " + ex.toString());
         }
         return null;
     }
