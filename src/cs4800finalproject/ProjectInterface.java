@@ -83,8 +83,8 @@ public class ProjectInterface {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        initWikipediaSpecialExportProcessor();
-        parseAndTagProcessedExportTexts();
+        //initWikipediaSpecialExportProcessor();
+        //parseAndTagProcessedExportTexts();
         // start the training of the machine
         searchWikipediaForArticle();
     }
@@ -93,7 +93,6 @@ public class ProjectInterface {
         System.out.println("What or Who would you like to search for?");
         System.out.print("Enter Search Term: ");
         String searchTerm = KBIN.nextLine().trim();
-        KBIN.nextLine(); // clear the keyboard buffer
         System.out.println(""); // print a line
         WSPS.searchWikipedia(searchTerm);
         //HashMap<String, String> resultsMap = WSPS.getSearchResultDetails();
@@ -132,6 +131,8 @@ public class ProjectInterface {
         } else {
             for (String processed : processedExports) {
                 if (!XMLOUT_TEST.endsWith(processed)) {
+                    processed = XMLOUT_FILES + processed; // prepend file path
+                    System.err.println("Parsing and Tagging @ " + processed);
                     ArrayList<String> texts = WSEP.getTextsFromProcessedExport(processed);
                     String processedType = determineFilesType(processed);
                     switch (processedType) {
@@ -201,7 +202,9 @@ public class ProjectInterface {
                      || exportType.equals("men")) {
                         String xmlFileName = XMLOUT_FILES + exportType + ".xml";
                         String exportInput = EXPORT_FILES + fileName;
+                        System.err.println("Processing Export File @ " + exportInput);
                         WSEP.convertSpecialExport(exportInput, xmlFileName);
+                        System.err.println("Processing Complete -> " + xmlFileName);
                     } else {
                         System.err.print("ERR: Export File Not Processed: ");
                         System.err.println(EXPORT_FILES + fileName);

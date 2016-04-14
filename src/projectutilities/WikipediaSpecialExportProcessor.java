@@ -65,10 +65,7 @@ public class WikipediaSpecialExportProcessor {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            System.out.println("Last Known Position");
             Document document = builder.parse(filename);
-            
-            System.out.println("nodes");
             NodeList nodes = document.getElementsByTagName("page");
             ArrayList<String> texts = new ArrayList<>(nodes.getLength());
             

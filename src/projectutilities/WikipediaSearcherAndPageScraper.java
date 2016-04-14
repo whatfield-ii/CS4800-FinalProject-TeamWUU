@@ -26,7 +26,6 @@ import com.jaunt.ResponseException;
 import com.jaunt.SearchException;
 import com.jaunt.UserAgent;
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 /**
  *
@@ -38,24 +37,9 @@ public class WikipediaSearcherAndPageScraper {
     //
     private final String WURL = "https://en.wikipedia.org/w/index.php?search=";
     //
-    private final HashMap<String, SearchResult> RESULTS_MAP = new HashMap<>();
+    private final HashMap<String, String> RESULTS_MAP = new HashMap<>();
     //
     private final UserAgent USER_AGENT = new UserAgent();
-    
-    public HashMap<String, String> getSearchResultDetails() {
-        HashMap<String, String> map = new HashMap<>();
-        for (Entry<String, SearchResult> entry : RESULTS_MAP.entrySet()) {
-            String searchTerm = entry.getKey();
-            String details = entry.getValue().text;
-            map.put(searchTerm, details);
-        }
-        return map;
-    }
-    
-    public String getSearchTermHREF(String searchTerm) {
-        String href = RESULTS_MAP.get(searchTerm).href;
-        return href;
-    }
     
     /**
      * 
@@ -63,10 +47,12 @@ public class WikipediaSearcherAndPageScraper {
      */
     public void searchWikipedia(String toSearchFor) {
         try {
+            System.out.println("searching wikipedia for: " + toSearchFor);
             USER_AGENT.visit(WURL);
             USER_AGENT.doc.fillout("search", toSearchFor);
             USER_AGENT.doc.submit("search");
             this.updateResultsMap();
+            System.out.println("searching and indexing complete.");
         } catch (ResponseException ex) {
             HttpResponse R = ex.getResponse();
             if (R != null) {
@@ -98,29 +84,13 @@ public class WikipediaSearcherAndPageScraper {
             for (Element res : results) {
                 String title = res.findFirst("<div>").findFirst("<a>").getAt("title");
                 String href = res.findFirst("<div>").findFirst("<a>").getAt("href");
-                Elements divs = res.findEvery("<div>");
-                for (Element text : divs) {
-                    System.out.println(text.innerText());
-                }
-                System.out.println("");
+                System.out.println(title);
+                System.out.println(href);
             }
         } catch (NotFound ex) {
             System.err.println("NotFound: " + ex.getMessage());
         }
         
     }
-    
-    /**
-     * 
-     */
-    private class SearchResult {
-        // Strings for the Search Result Title, Hyperlink, and Quick Description
-        public final String title, href, text;
-        // The Default Search Result Constructor
-        public SearchResult(String title, String href, String text) {
-            this.title = title;
-            this.href = href;
-            this.text = text;
-        }
-    }
+
 }
