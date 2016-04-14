@@ -75,6 +75,10 @@ public class StandfordSpeechTaggerAndCounter {
         return taggedString;
     }
     
+    /**
+     *
+     * @param filename
+     */
     public void writeReport(String filename) {
         try {
             FileWriter fw = new FileWriter(new File(filename));

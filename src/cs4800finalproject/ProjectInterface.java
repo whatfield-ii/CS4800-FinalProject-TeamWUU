@@ -83,21 +83,9 @@ public class ProjectInterface {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        //initWikipediaSpecialExportProcessor();
-        //parseAndTagProcessedExportTexts();
+        initWikipediaSpecialExportProcessor();
+        parseAndTagProcessedExportTexts();
         // start the training of the machine
-        searchWikipediaForArticle();
-    }
-    
-    private static String searchWikipediaForArticle() {
-        System.out.println("What or Who would you like to search for?");
-        System.out.print("Enter Search Term: ");
-        String searchTerm = KBIN.nextLine().trim();
-        System.out.println(""); // print a line
-        WSPS.searchWikipedia(searchTerm);
-        //HashMap<String, String> resultsMap = WSPS.getSearchResultDetails();
-        //Set<Map.Entry<String, String>> resultSet = resultsMap.entrySet();
-        return null;
     }
     
     private static void parseAndTagProcessedExportTexts() {
