@@ -55,7 +55,6 @@ public class WikipediaSpecialExportProcessor {
         public ArrayList<String> anchors;
         public ArrayList<String> texts;
         public String title;
-        //public String text;
     }
     
     /**
@@ -91,6 +90,15 @@ public class WikipediaSpecialExportProcessor {
     
     /**
      * 
+     * @param toProcess
+     * @return 
+     */
+    public ArrayList<String> processStringForParagraphs(String toProcess) {
+        return getDifferentParagraphs(toProcess.toCharArray());
+    }
+    
+    /**
+     * 
      * @param export
      * @param xml 
      */
@@ -109,13 +117,13 @@ public class WikipediaSpecialExportProcessor {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(filename);
-            
+            //
             NodeList nodes = document.getElementsByTagName("page");
             ArrayList<WikiPage> wikis = processPageNodeList(nodes);
-            
+            //
             Document processed = makeDocumentFromWikis(wikis);
             return processed;
-            
+            //
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             System.err.println("ERR @ importSpecialExport: " + ex.getMessage());
         }
@@ -136,20 +144,17 @@ public class WikipediaSpecialExportProcessor {
             //
             String title = page.getElementsByTagName("title").item(0).getTextContent().trim();
             char[] chars = page.getElementsByTagName("text").item(0).getTextContent().toCharArray();
-            //String text = normalizeWikiPageTextForPOSTagging(chars);
             //
             ArrayList<String> categories = parseTextByType(chars, "categories");
             ArrayList<String> anchors = parseTextByType(chars, "anchors");
             //
             ArrayList<String> texts = getDifferentParagraphs(chars);
-            //for (String para : texts) { System.out.println(para); }
             //
             WikiPage wikipage = new WikiPage();
             wikipage.categories = categories;
             wikipage.anchors = anchors;
             wikipage.title = title;
             wikipage.texts = texts;
-            //wikipage.text = text;
             //
             wikis.add(wikipage);
         }
@@ -165,9 +170,7 @@ public class WikipediaSpecialExportProcessor {
         char current;
 
         for (int i = 0; i < symbols.length - 1; i++) {
-            //next = symbols[i + 1];  // hence length - 1
             current = symbols[i];
-            //if (current == '=' && next == '=') break;
             if (current == '{') braceCount++;
             if (current == '}') braceCount--;
             if (braceCount > 0) continue;
@@ -187,7 +190,6 @@ public class WikipediaSpecialExportProcessor {
                 sb.append(' ');
             }
         }
-        //return sb.toString();
         return texts;
     }
     
@@ -301,9 +303,6 @@ public class WikipediaSpecialExportProcessor {
                 title.appendChild(document.createTextNode(wikipage.title));
                 page.appendChild(title);
                 //
-                //Element text = document.createElement("text");
-                //text.appendChild(document.createTextNode(wikipage.text));
-                //page.appendChild(text);
                 for (String p : wikipage.texts) {
                     Element text = document.createElement("text");
                     text.appendChild(document.createTextNode(p));

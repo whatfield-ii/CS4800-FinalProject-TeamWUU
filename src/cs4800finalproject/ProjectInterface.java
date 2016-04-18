@@ -83,9 +83,10 @@ public class ProjectInterface {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        initWikipediaSpecialExportProcessor();
-        parseAndTagProcessedExportTexts();
+        //initWikipediaSpecialExportProcessor();
+        //parseAndTagProcessedExportTexts();
         // start the training of the machine
+        WSPS.searchWikipedia("this is a test");
     }
     
     private static void parseAndTagProcessedExportTexts() {

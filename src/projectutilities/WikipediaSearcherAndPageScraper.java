@@ -49,8 +49,11 @@ public class WikipediaSearcherAndPageScraper {
         try {
             System.out.println("searching wikipedia for: " + toSearchFor);
             USER_AGENT.visit(WURL);
+            System.out.println("therw");
             USER_AGENT.doc.fillout("search", toSearchFor);
+            System.out.println("filled out");
             USER_AGENT.doc.submit("search");
+            System.out.println("searching");
             this.updateResultsMap();
             System.out.println("searching and indexing complete.");
         } catch (ResponseException ex) {
